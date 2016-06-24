@@ -193,6 +193,46 @@ extern const void *ipset_data_get(const struct ipset_data *data,
                                   enum ipset_opt opt);
 
 
+/* errcode.h */
+/* Kernel error code to message table */
+struct ipset_errcode_table {
+    int errcode;        /* error code returned by the kernel */
+    enum ipset_cmd cmd; /* issued command */
+    const char *message;    /* error message the code translated to */
+};
+
+extern int ipset_errcode(struct ipset_session *session, enum ipset_cmd cmd,
+             int errcode);
+
+/* in.h */
+typedef uint32_t in_addr_t;
+struct in_addr {
+    in_addr_t s_addr;
+};
+
+/* nf_inet_addr.h */
+/* The structure to hold IP addresses, same as in linux/netfilter.h */
+union nf_inet_addr {
+    uint32_t    all[4];
+    uint32_t    ip;
+    uint32_t    ip6[4];
+    struct in_addr  in;
+    struct in6_addr in6;
+};
+
+/* IPv6 address */
+struct in6_addr
+  {
+    union
+      {
+        uint8_t __u6_addr8[16];
+        uint16_t __u6_addr16[8];
+        uint32_t __u6_addr32[4];
+      } __in6_u;
+  };
+
+
+
 /* standard library */
 int printf(const char *format, ...);
 """
@@ -203,9 +243,11 @@ C = ffi.verify("""
 #include <stdbool.h>                            /* bool */
 #include <stdint.h>                             /* uintxx_t */
 #include <stdio.h>                              /* printf */
+#include <netinet/in.h>                         /* struct in[6]_addr */
 
 #include <libipset/linux_ip_set.h>              /* enum ipset_cmd */
 #include <libipset/data.h>    /* enum ipset_data */
+#include <libipset/errcode.h>    /* error handling */
 #include <libipset/session.h>
 #include <libipset/parse.h>   /* ipset_parse_* */
 #include <libipset/types.h>   /* struct ipset_type */
