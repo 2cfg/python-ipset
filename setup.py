@@ -7,6 +7,9 @@ setup(
     packages=find_packages(),
     url='https://github.com/Lukasa/python-ipset',
     license='GPLv2',
+    install_requires=[
+        'ipaddress',
+    ],
     author='Cory Benfield',
     author_email='cory@lukasa.co.uk',
     description='A Python wrapper around libipset.'
