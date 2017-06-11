@@ -142,6 +142,10 @@ class IpSet(object):
                 t = C.ipset_type_get(s, C.IPSET_CMD_ADD)
                 C.ipset_data_set(C.ipset_session_data(s),
                                  C.IPSET_OPT_TYPE, t)
+                
+                if self._exist:
+                    C.ipset_envopt_parse(s, C.IPSET_ENV_EXIST, ffi.NULL)
+
 
                 ip_addr = ffi.new("struct in_addr *")
                 ip_addr.s_addr = int(ip)
