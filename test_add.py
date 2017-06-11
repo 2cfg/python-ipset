@@ -10,7 +10,7 @@ def add_to_set(ip_set, item):
     net = ipaddress.ip_network(item)
 
     if not isinstance(net, ipaddress.IPv4Network):
-        raise Exception, 'Only IPv4 nets are supported'
+        raise Exception('Only IPv4 nets are supported')
 
     if net.prefixlen < SET_PREFIX:
         for subnet in net.subnets(new_prefix=24):
@@ -20,7 +20,8 @@ def add_to_set(ip_set, item):
 
 print "Creating 1st set..."
 
-myset = IpSet(set_name="test", set_type="hash:ip", set_family="inet", netmask=SET_PREFIX)
+myset = IpSet(set_name="test", set_type="hash:ip", set_family="inet",
+              netmask=SET_PREFIX)
 
 add_to_set(myset, '127.0.0.1')
 add_to_set(myset, '192.168.100.4/32')

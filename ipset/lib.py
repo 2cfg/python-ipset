@@ -259,4 +259,3 @@ C = ffi.verify("""
 #define IPSET_OUTBUFLEN                 8192
 
 """, libraries=['ipset', 'mnl'])
-
