@@ -29,7 +29,7 @@ TYPES = [
 ]
 
 
-class IpSet(object):
+class IPSet(object):
 
     def __init__(self, set_name, set_type="hash:ip", set_family="inet",
                  netmask=None, create=True, ignore_existing=True):
@@ -39,12 +39,12 @@ class IpSet(object):
         self._exist = ignore_existing
 
         if set_type not in TYPES:
-            raise Exception('Set type should be one of {T}'
-                            .format(T=repr(TYPES)))
+            raise ValueError('Set type should be one of {T}'
+                             .format(T=repr(TYPES)))
 
         if set_family not in FAMILIES:
-            raise Exception('Family should be one of {F}'
-                            .format(T=repr(FAMILIES)))
+            raise ValueError('Family should be one of {F}'
+                             .format(T=repr(FAMILIES)))
 
         self._family = set_family
         self._type = set_type
@@ -125,14 +125,19 @@ class IpSet(object):
             assert rc == 0
 
     def add(self, item):
-        ip = None
-        try:
-            ip = ipaddress.ip_address('.'.join(str(item).split('.')[::-1]))
-        except Exception:
-            print "Only valid IPv4 addresses are supported!"
-            raise
-
         if self._type == 'hash:ip':
+            ip = None
+            cidr = None
+            ip_net = ipaddress.ip_network(item)
+            ip = ffi.new("union nf_inet_addr *")
+            af = None
+            if isinstance(ip_net, ipaddress.IPv4Network):
+                af = C.AF_INET
+            elif isinstance(ip_net, ipaddress.IPv6Network):
+                af = C.AF_INET6
+            rc = C.inet_pton(af, str(ip_net.network_address), ip)
+            assert rc == 1
+            cidr = int(ip_net.prefixlen)
 
             with self.__class__.session(self.__init_session()) as s:
                 rc = C.ipset_data_set(C.ipset_session_data(s),
@@ -142,26 +147,26 @@ class IpSet(object):
                 t = C.ipset_type_get(s, C.IPSET_CMD_ADD)
                 C.ipset_data_set(C.ipset_session_data(s),
                                  C.IPSET_OPT_TYPE, t)
-                
+
                 if self._exist:
                     C.ipset_envopt_parse(s, C.IPSET_ENV_EXIST, ffi.NULL)
 
-
-                ip_addr = ffi.new("struct in_addr *")
-                ip_addr.s_addr = int(ip)
+                C.ipset_data_set(C.ipset_session_data(s),
+                                 C.IPSET_OPT_IP, ip)
 
                 C.ipset_data_set(C.ipset_session_data(s),
-                                 C.IPSET_OPT_IP, ip_addr)
+                                 C.IPSET_OPT_CIDR, ffi.new("uint8_t *", cidr))
 
                 rc = C.ipset_cmd(s, C.IPSET_CMD_ADD, 0)
                 assert rc == 0
 
         else:
-            raise Exception('Not implemented')
+            raise NotImplementedError('Adding to {t} not implemented yet'
+                                      .format(t=self._type))
         return
 
     def remove(self, item):
-        raise Exception('Not implemented')
+        raise NotImplementedError('Remove not implemented yet')
 
     def destroy(self):
         with self.__class__.session(self.__init_session()) as s:

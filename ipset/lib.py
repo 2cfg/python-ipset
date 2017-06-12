@@ -231,7 +231,19 @@ struct in6_addr
       } __in6_u;
   };
 
+/* sys/socket.h */
 
+#define AF_INET 2
+#define AF_INET6 10
+
+/* arpa/inet.h */
+/* This function converts the character string src into a network
+   address structure in the af address family, then copies the network
+   address structure to dst.  The af argument must be either AF_INET or
+   AF_INET6.  dst is written in network byte order.
+*/
+
+int inet_pton(int af, const char *src, void *dst);
 
 /* standard library */
 int printf(const char *format, ...);
@@ -243,7 +255,9 @@ C = ffi.verify("""
 #include <stdbool.h>                            /* bool */
 #include <stdint.h>                             /* uintxx_t */
 #include <stdio.h>                              /* printf */
+#include <sys/socket.h>                         /* AF_INET[6] */
 #include <netinet/in.h>                         /* struct in[6]_addr */
+#include <arpa/inet.h>                         /* inet_pton */
 
 #include <libipset/linux_ip_set.h>              /* enum ipset_cmd */
 #include <libipset/data.h>    /* enum ipset_data */

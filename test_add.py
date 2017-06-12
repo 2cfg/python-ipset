@@ -1,44 +1,41 @@
 import ipaddress
 
-from ipset.wrapper import IpSet
+from ipset.wrapper import IPSet
 
 
 SET_PREFIX = 24
 
-
-def add_to_set(ip_set, item):
-    net = ipaddress.ip_network(item)
-
-    if not isinstance(net, ipaddress.IPv4Network):
-        raise Exception('Only IPv4 nets are supported')
-
-    if net.prefixlen < SET_PREFIX:
-        for subnet in net.subnets(new_prefix=24):
-            ip_set.add(subnet.network_address)
-    else:
-        ip_set.add(net.network_address)
-
 print "Creating 1st set..."
 
-myset = IpSet(set_name="test", set_type="hash:ip", set_family="inet",
-              netmask=SET_PREFIX)
+myset = IPSet(set_name="test", set_type="hash:ip", set_family="inet",
+              netmask=SET_PREFIX, ignore_existing=True)
 
-add_to_set(myset, '127.0.0.1')
-add_to_set(myset, '192.168.100.4/32')
-add_to_set(myset, '192.168.0.0/27')
-add_to_set(myset, '10.8.0.0/19')
+myset.add('127.0.0.1')
+myset.add('192.168.100.4/32')
+myset.add('192.168.0.0/27')
+myset.add('10.8.0.0/19')
 
 print "Creating 2nd set..."
 
-myset2 = IpSet(set_name="test2", set_type="hash:ip", set_family="inet")
+myset2 = IPSet(set_name="test2", set_type="hash:ip", set_family="inet",
+               ignore_existing=True)
 
 myset2.add(ipaddress.IPv4Address('10.0.0.1'))
 
 print "Swapping..."
 
-IpSet.swap(myset, myset2)
+IPSet.swap(myset, myset2)
+
+print "Creating IPv6 set..."
+
+ipv6set = IPSet(set_name="testv6", set_type="hash:ip", set_family="inet6",
+                ignore_existing=True)
+
+ipv6set.add('::1')
+ipv6set.add('fe80::a21d:48ff:fec7:2310')
 
 print "Destroying..."
 
 myset.destroy()
 myset2.destroy()
+ipv6set.destroy()

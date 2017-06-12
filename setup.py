@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='python-ipset',
-    version='0.0.1',
+    version='0.0.6',
     packages=find_packages(),
     url='https://github.com/Lukasa/python-ipset',
     license='GPLv2',
