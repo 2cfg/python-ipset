@@ -15,7 +15,9 @@ Goals
   don't need to concern themselves with the details of libipset's interface.
 - Be fast and small.
 
-TODO:
+TODO
+----
+
 - Implement del, test, list, flush, rename
 - Implement operations on all kinds of sets (not just hash:ip)
 - Implement mass operations (aka restore)
