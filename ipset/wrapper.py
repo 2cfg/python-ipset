@@ -2,7 +2,7 @@ import ipaddress
 
 from contextlib import contextmanager
 
-from lib import ffi, C
+from ipset.lib import ffi, C
 
 
 FAMILIES = [
@@ -94,11 +94,11 @@ class IPSet(object):
     def __create(self):
         with self.__class__.session(self.__init_session()) as s:
             rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_SETNAME, self._name)
+                                  C.IPSET_SETNAME, self._name.encode())
             assert rc == 0
 
             C.ipset_data_set(C.ipset_session_data(s),
-                             C.IPSET_OPT_TYPENAME, self._type)
+                             C.IPSET_OPT_TYPENAME, self._type.encode())
 
             t = C.ipset_type_get(s, C.IPSET_CMD_CREATE)
             C.ipset_data_set(C.ipset_session_data(s), C.IPSET_OPT_TYPE, t)
@@ -135,13 +135,13 @@ class IPSet(object):
                 af = C.AF_INET
             elif isinstance(ip_net, ipaddress.IPv6Network):
                 af = C.AF_INET6
-            rc = C.inet_pton(af, str(ip_net.network_address), ip)
+            rc = C.inet_pton(af, str(ip_net.network_address).encode(), ip)
             assert rc == 1
             cidr = int(ip_net.prefixlen)
 
             with self.__class__.session(self.__init_session()) as s:
                 rc = C.ipset_data_set(C.ipset_session_data(s),
-                                      C.IPSET_SETNAME, self._name)
+                                      C.IPSET_SETNAME, self._name.encode())
                 assert rc == 0
 
                 t = C.ipset_type_get(s, C.IPSET_CMD_ADD)
@@ -171,7 +171,7 @@ class IPSet(object):
     def destroy(self):
         with self.__class__.session(self.__init_session()) as s:
             rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_SETNAME, self._name)
+                                  C.IPSET_SETNAME, self._name.encode())
             assert rc == 0
 
             t = C.ipset_type_get(s, C.IPSET_CMD_DESTROY)
@@ -192,7 +192,7 @@ class IPSet(object):
 
         with cls.session(cls.__init_session()) as s:
             rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_SETNAME, first_set.name)
+                                  C.IPSET_SETNAME, first_set.name.encode())
             assert rc == 0
 
             t = C.ipset_type_get(s, C.IPSET_CMD_SWAP)
@@ -200,7 +200,7 @@ class IPSet(object):
                              C.IPSET_OPT_TYPE, t)
 
             rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_OPT_SETNAME2, second_set.name)
+                                  C.IPSET_OPT_SETNAME2, second_set.name.encode())
             assert rc == 0
 
             rc = C.ipset_cmd(s, C.IPSET_CMD_SWAP, 0)
