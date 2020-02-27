@@ -4,7 +4,7 @@
 import ipaddress
 from contextlib import contextmanager
 from ipset.libipset.ipset import ffi, lib
-from ipset.libipset.lib_utils import Output
+from ipset.lib_utils import Output
 
 FAMILIES = [
     'inet',
