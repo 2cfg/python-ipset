@@ -4,3 +4,5 @@ __pycache__
 python_ipset.egg-info/
 dist/
 build/
+ipset/libipset/
+ipset/__pycache__/

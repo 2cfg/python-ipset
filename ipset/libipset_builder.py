@@ -1,6 +1,9 @@
 from cffi import FFI
+ffibuilder = FFI()
 
-cdef = """
+# cdef() expects a single string declaring the C types, functions and
+# globals needed to use the shared object. It must be in valid C syntax.
+ffibuilder.cdef("""
 /* nfproto.h */
 /*
  * The constants to select, same as in linux/netfilter.h.
@@ -247,14 +250,23 @@ int inet_pton(int af, const char *src, void *dst);
 
 /* standard library */
 int printf(const char *format, ...);
-"""
+int out_fn(char *format, ...);
+/*output buffer callback from wrapper*/
+extern "Python" int out_buffer(char *buff);
 
-ffi = FFI()
-ffi.cdef(cdef)
-C = ffi.verify("""
+""")
+
+# set_source() gives the name of the python extension module to
+# produce, and some C source code as a string.  This C code needs
+# to make the declarated functions, types and globals available,
+# so it is often just the "#include".
+ffibuilder.set_source("libipset.ipset",
+"""
 #include <stdbool.h>                            /* bool */
 #include <stdint.h>                             /* uintxx_t */
-#include <stdio.h>                              /* printf */
+#include <stdio.h>                              /* printf, sprintf */
+#include <stdarg.h>
+// #include <stdlib.h>
 #include <sys/socket.h>                         /* AF_INET[6] */
 #include <netinet/in.h>                         /* struct in[6]_addr */
 #include <arpa/inet.h>                         /* inet_pton */
@@ -272,4 +284,19 @@ C = ffi.verify("""
 #define IPSET_ERRORBUFLEN               1024
 #define IPSET_OUTBUFLEN                 8192
 
-""", libraries=['ipset', 'mnl'])
+static int out_buffer(char *buff);
+
+static int out_fn(char *format, ...) {
+    va_list argp;
+    char *s;
+    va_start(argp, format);
+    s = va_arg(argp, char *);
+    va_end(argp);
+    out_buffer(s);
+    return 0;
+};    
+""",
+     libraries=['ipset', 'mnl'])    
+
+if __name__ == "__main__":
+    ffibuilder.compile(verbose=True)

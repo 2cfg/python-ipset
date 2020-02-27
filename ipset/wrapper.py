@@ -1,9 +1,10 @@
+#!/usr/bin/python3
+# -*- coding: UTF-8 -*-
+
 import ipaddress
-
 from contextlib import contextmanager
-
-from ipset.lib import ffi, C
-
+from ipset.libipset.ipset import ffi, lib
+from ipset.libipset.lib_utils import Output
 
 FAMILIES = [
     'inet',
@@ -43,7 +44,7 @@ class IPSet(object):
                              .format(T=repr(TYPES)))
 
         if set_family not in FAMILIES:
-            raise ValueError('Family should be one of {F}'
+            raise ValueError('Family should be one of {T}'
                              .format(T=repr(FAMILIES)))
 
         self._family = set_family
@@ -74,14 +75,14 @@ class IPSet(object):
 
     @staticmethod
     def __init_session():
-        C.ipset_load_types()
-        session = C.ipset_session_init(C.printf)
+        lib.ipset_load_types()
+        session = lib.ipset_session_init(lib.printf)
 
         return session
 
     @staticmethod
     def __close_session(session):
-        C.ipset_session_fini(session)
+        lib.ipset_session_fini(session)
 
     @classmethod
     @contextmanager
@@ -93,36 +94,37 @@ class IPSet(object):
 
     def __create(self):
         with self.__class__.session(self.__init_session()) as s:
-            rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_SETNAME, self._name.encode())
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                  lib.IPSET_SETNAME, self._name.encode())
             assert rc == 0
 
-            C.ipset_data_set(C.ipset_session_data(s),
-                             C.IPSET_OPT_TYPENAME, self._type.encode())
+            lib.ipset_data_set(lib.ipset_session_data(s),
+                             lib.IPSET_OPT_TYPENAME, self._type.encode())
 
-            t = C.ipset_type_get(s, C.IPSET_CMD_CREATE)
-            C.ipset_data_set(C.ipset_session_data(s), C.IPSET_OPT_TYPE, t)
+            t = lib.ipset_type_get(s, lib.IPSET_CMD_CREATE)
+            lib.ipset_data_set(lib.ipset_session_data(s), lib.IPSET_OPT_TYPE, t)
 
             if self._exist:
-                C.ipset_envopt_parse(s, C.IPSET_ENV_EXIST, ffi.NULL)
+                lib.ipset_envopt_parse(s, lib.IPSET_ENV_EXIST, ffi.NULL)
 
             family_ptr = None
             if self._family == 'inet':
-                family_ptr = ffi.new("int *", C.NFPROTO_IPV4)
+                family_ptr = ffi.new("int *", lib.NFPROTO_IPV4)
             elif self._family == 'inet6':
-                family_ptr = ffi.new("int *", C.NFPROTO_IPV6)
+                family_ptr = ffi.new("int *", lib.NFPROTO_IPV6)
 
-            C.ipset_data_set(C.ipset_session_data(s),
-                             C.IPSET_OPT_FAMILY, family_ptr)
+            lib.ipset_data_set(lib.ipset_session_data(s),
+                             lib.IPSET_OPT_FAMILY, family_ptr)
 
             if self._netmask is not None:
                 mask = ffi.new("struct in_addr *")
                 mask.s_addr = int(self._netmask)
-                C.ipset_data_set(C.ipset_session_data(s),
-                                 C.IPSET_OPT_NETMASK, mask)
+                lib.ipset_data_set(lib.ipset_session_data(s),
+                                 lib.IPSET_OPT_NETMASK, mask)
 
-            rc = C.ipset_cmd(s, C.IPSET_CMD_CREATE, 0)
+            rc = lib.ipset_cmd(s, lib.IPSET_CMD_CREATE, 0)
             assert rc == 0
+
 
     def add(self, item):
         if self._type == 'hash:ip':
@@ -132,32 +134,32 @@ class IPSet(object):
             ip = ffi.new("union nf_inet_addr *")
             af = None
             if isinstance(ip_net, ipaddress.IPv4Network):
-                af = C.AF_INET
+                af = lib.AF_INET
             elif isinstance(ip_net, ipaddress.IPv6Network):
-                af = C.AF_INET6
-            rc = C.inet_pton(af, str(ip_net.network_address).encode(), ip)
+                af = lib.AF_INET6
+            rc = lib.inet_pton(af, str(ip_net.network_address).encode(), ip)
             assert rc == 1
             cidr = int(ip_net.prefixlen)
 
             with self.__class__.session(self.__init_session()) as s:
-                rc = C.ipset_data_set(C.ipset_session_data(s),
-                                      C.IPSET_SETNAME, self._name.encode())
+                rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                      lib.IPSET_SETNAME, self._name.encode())
                 assert rc == 0
 
-                t = C.ipset_type_get(s, C.IPSET_CMD_ADD)
-                C.ipset_data_set(C.ipset_session_data(s),
-                                 C.IPSET_OPT_TYPE, t)
+                t = lib.ipset_type_get(s, lib.IPSET_CMD_ADD)
+                lib.ipset_data_set(lib.ipset_session_data(s),
+                                 lib.IPSET_OPT_TYPE, t)
 
                 if self._exist:
-                    C.ipset_envopt_parse(s, C.IPSET_ENV_EXIST, ffi.NULL)
+                    lib.ipset_envopt_parse(s, lib.IPSET_ENV_EXIST, ffi.NULL)
 
-                C.ipset_data_set(C.ipset_session_data(s),
-                                 C.IPSET_OPT_IP, ip)
+                lib.ipset_data_set(lib.ipset_session_data(s),
+                                 lib.IPSET_OPT_IP, ip)
 
-                C.ipset_data_set(C.ipset_session_data(s),
-                                 C.IPSET_OPT_CIDR, ffi.new("uint8_t *", cidr))
+                lib.ipset_data_set(lib.ipset_session_data(s),
+                                 lib.IPSET_OPT_CIDR, ffi.new("uint8_t *", cidr))
 
-                rc = C.ipset_cmd(s, C.IPSET_CMD_ADD, 0)
+                rc = lib.ipset_cmd(s, lib.IPSET_CMD_ADD, 0)
                 assert rc == 0
 
         else:
@@ -168,17 +170,47 @@ class IPSet(object):
     def remove(self, item):
         raise NotImplementedError('Remove not implemented yet')
 
-    def destroy(self):
+    def list_to_var(self, output_type="plain"):
         with self.__class__.session(self.__init_session()) as s:
-            rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_SETNAME, self._name.encode())
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                  lib.IPSET_SETNAME, self._name.encode())
             assert rc == 0
 
-            t = C.ipset_type_get(s, C.IPSET_CMD_DESTROY)
-            C.ipset_data_set(C.ipset_session_data(s),
-                             C.IPSET_OPT_TYPE, t)
+            if output_type is "plain":
+                lib.ipset_session_output(s, lib.IPSET_LIST_PLAIN)
+            elif output_type is "xml":
+                lib.ipset_session_output(s, lib.IPSET_LIST_XML)
 
-            rc = C.ipset_cmd(s, C.IPSET_CMD_DESTROY, 0)
+            lib.ipset_session_outfn(s, lib.out_fn)
+
+            rc = lib.ipset_cmd(s, lib.IPSET_CMD_LIST, 0)
+            assert rc == 0
+
+            return Output.buffer()
+
+    def list(self):
+        with self.__class__.session(self.__init_session()) as s:
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                  lib.IPSET_SETNAME, self._name.encode())
+            assert rc == 0
+
+            lib.ipset_session_output(s, lib.IPSET_LIST_PLAIN)
+            rc = lib.ipset_cmd(s, lib.IPSET_CMD_LIST, 0)
+            assert rc == 0
+
+            return
+
+    def destroy(self):
+        with self.__class__.session(self.__init_session()) as s:
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                  lib.IPSET_SETNAME, self._name.encode())
+            assert rc == 0
+
+            t = lib.ipset_type_get(s, lib.IPSET_CMD_DESTROY)
+            lib.ipset_data_set(lib.ipset_session_data(s),
+                             lib.IPSET_OPT_TYPE, t)
+
+            rc = lib.ipset_cmd(s, lib.IPSET_CMD_DESTROY, 0)
             assert rc == 0
         self.__dict__ = {}
 
@@ -191,19 +223,19 @@ class IPSet(object):
                             .format(c=cls.__name__))
 
         with cls.session(cls.__init_session()) as s:
-            rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_SETNAME, first_set.name.encode())
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                  lib.IPSET_SETNAME, first_set.name.encode())
             assert rc == 0
 
-            t = C.ipset_type_get(s, C.IPSET_CMD_SWAP)
-            C.ipset_data_set(C.ipset_session_data(s),
-                             C.IPSET_OPT_TYPE, t)
+            t = lib.ipset_type_get(s, lib.IPSET_CMD_SWAP)
+            lib.ipset_data_set(lib.ipset_session_data(s),
+                             lib.IPSET_OPT_TYPE, t)
 
-            rc = C.ipset_data_set(C.ipset_session_data(s),
-                                  C.IPSET_OPT_SETNAME2, second_set.name.encode())
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                  lib.IPSET_OPT_SETNAME2, second_set.name.encode())
             assert rc == 0
 
-            rc = C.ipset_cmd(s, C.IPSET_CMD_SWAP, 0)
+            rc = lib.ipset_cmd(s, lib.IPSET_CMD_SWAP, 0)
             assert rc == 0
         first_set.name, second_set.name = second_set.name, first_set.name
         first_set.__dict__, second_set.__dict__ =\
