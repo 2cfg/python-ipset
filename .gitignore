@@ -1,4 +1,5 @@
-*.swp
+* .swp
+.idea/
 *.pyc
 __pycache__
 python_ipset.egg-info/
