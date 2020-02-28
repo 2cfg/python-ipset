@@ -18,7 +18,7 @@ Goals
 TODO
 ----
 
-- Implement del, test, flush, rename
+- Implement flush, rename
 - Implement operations on all kinds of sets (not just hash:ip)
 - Implement mass operations (aka restore)
 - Handle errors from libipset properly

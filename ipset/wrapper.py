@@ -125,7 +125,6 @@ class IPSet(object):
             rc = lib.ipset_cmd(s, lib.IPSET_CMD_CREATE, 0)
             assert rc == 0
 
-
     def add(self, item):
         if self._type == 'hash:ip':
             ip = None
@@ -168,7 +167,34 @@ class IPSet(object):
         return
 
     def remove(self, item):
-        raise NotImplementedError('Remove not implemented yet')
+        with self.__class__.session(self.__init_session()) as s:
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                    lib.IPSET_SETNAME, self._name.encode())
+            assert rc == 0
+
+            t = lib.ipset_type_get(s, lib.IPSET_CMD_DEL)
+            lib.ipset_data_set(lib.ipset_session_data(s), lib.IPSET_OPT_TYPE, t)
+
+            rc = lib.ipset_parse_elem(s, lib.IPSET_SETNAME, item.encode())
+            assert rc == 0
+
+            rc = lib.ipset_cmd(s, lib.IPSET_CMD_DEL, 0)
+            assert rc == 0
+
+    def test(self, item):
+        with self.__class__.session(self.__init_session()) as s:
+            rc = lib.ipset_data_set(lib.ipset_session_data(s),
+                                    lib.IPSET_SETNAME, self._name.encode())
+            assert rc == 0
+
+            t = lib.ipset_type_get(s, lib.IPSET_CMD_TEST)
+            lib.ipset_data_set(lib.ipset_session_data(s), lib.IPSET_OPT_TYPE, t)
+
+            rc = lib.ipset_parse_elem(s, 1, item.encode())
+            assert rc == 0
+
+            return lib.ipset_cmd(s, lib.IPSET_CMD_TEST, 0) == 0
+
 
     def list_to_var(self, output_type="plain"):
         with self.__class__.session(self.__init_session()) as s:

@@ -122,7 +122,6 @@ extern const struct ipset_type *
 extern const struct ipset_type *
         ipset_type_check(struct ipset_session *session);
 
-
 /* data.h */
 /* Data options */
 enum ipset_opt {
@@ -248,10 +247,14 @@ struct in6_addr
 
 int inet_pton(int af, const char *src, void *dst);
 
+/* parse.h */
+extern int ipset_parse_elem(struct ipset_session *session, enum ipset_opt opt, const char *str);
+
 /* standard library */
 int printf(const char *format, ...);
-int out_fn(char *format, ...);
+
 /*output buffer callback from wrapper*/
+int out_fn(char *format, ...);
 extern "Python" int out_buffer(char *buff);
 
 """)
