@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-from ipset.libipset.ipset import ffi, lib
+from .libipset.ipset import ffi, lib
 
 class Output:
     _buffer = ""

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 import ipaddress
 from ipset.wrapper import IPSet
-import xml.etree.ElementTree as ET
+
 
 # SET_PREFIX = 24
 #
@@ -33,16 +33,13 @@ myset32.list()
 print("Test exist 47.92.4.69 is {}".format(myset32.test('47.92.4.69')))
 
 # Example 2: output to variable as xml
-xml = myset32.list_to_var("xml")
-
 try:
-    tree1 = ET.fromstring(xml)
-    print("--" * 20)
-    print([e.text for e in tree1.iter("elem")])
+    list = myset32.list_get()
+    print(list)
 except Exception as e:
     print(str(e))
 
-myset32.destroy()
+# myset32.destroy()
 
 # print("Creating 2nd set...")
 #

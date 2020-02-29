@@ -3,8 +3,9 @@
 
 import ipaddress
 from contextlib import contextmanager
-from ipset.libipset.ipset import ffi, lib
-from ipset.lib_utils import Output
+from .libipset.ipset import ffi, lib
+from .lib_utils import Output
+import xml.etree.ElementTree as ET
 
 FAMILIES = [
     'inet',
@@ -195,24 +196,20 @@ class IPSet(object):
 
             return lib.ipset_cmd(s, lib.IPSET_CMD_TEST, 0) == 0
 
-
-    def list_to_var(self, output_type="plain"):
+    def list_get(self):
         with self.__class__.session(self.__init_session()) as s:
             rc = lib.ipset_data_set(lib.ipset_session_data(s),
                                   lib.IPSET_SETNAME, self._name.encode())
             assert rc == 0
 
-            if output_type is "plain":
-                lib.ipset_session_output(s, lib.IPSET_LIST_PLAIN)
-            elif output_type is "xml":
-                lib.ipset_session_output(s, lib.IPSET_LIST_XML)
-
+            lib.ipset_session_output(s, lib.IPSET_LIST_XML)
             lib.ipset_session_outfn(s, lib.out_fn)
 
             rc = lib.ipset_cmd(s, lib.IPSET_CMD_LIST, 0)
             assert rc == 0
 
-            return Output.buffer()
+            tree = ET.fromstring(Output.buffer())
+            return [e.text for e in tree.iter("elem")]
 
     def list(self):
         with self.__class__.session(self.__init_session()) as s:
